@@ -3,11 +3,10 @@ adopted from pytorch.org (Classifying names with a character-level RNN-Sean Robe
 '''
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
+import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pickle as pkl
@@ -19,52 +18,63 @@ import time
 import argparse
 import neptune
 
-# declare model
+from ad_model import gnn_binary_classifier
+from ad_data import ad_gnn_iterator
 
+def train_main(args):
+    device = torch.device('cuda:0')
+    criterion = F.nll_loss
 
+    # declare model
+    model = gnn_binary_classifier(args).to(device)
 
-# declare dataset
+    # declare dataset
+    trainiter = ad_gnn_iterator()
 
+    # declare optimizer
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
-# modify the dataset to produce labels
+    # modify the dataset to produce labels
+    # create a training loop
+    train_loss = 0.0
+    log_interval=100
 
+    for ei in range(1000):
+        for li, (anno, A_out, A_in, label) in enumerate(trainiter):
+            anno = anno.to(dtype=torch.float32, device=device)
+            A_out = A_out.to(dtype=torch.float32, device=device)
+            A_in = A_in.to(dtype=torch.float32, device=device)
+            label = label.to(dtype=torch.int64, device=device)
+        
+            optimizer.zero_grad()
 
-# create a training loop
+            output = model(A_out, A_in, anno)
 
+            # go through loss function
+            loss = criterion(output, label)
+            loss.backward()
+
+            # optimizer
+            optimizer.step()
+            train_loss += loss.item()
+        
+            if li % log_interval == 999:
+                train_loss /= log_interval
+                print('epoch: {:d} | li: {:d} | train_loss: {:.4f}'.format(ei+1, li+1, train_loss))
+                train_loss = 0
+
+    return
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--tr_path', type=str, help='', default='')
-    parser.add_argument('--val_path', type=str, help='', default='')
-    parser.add_argument('--test_path', type=str, help='', default='')
-    parser.add_argument('--stat_file', type=str, help='', default='')
-    parser.add_argument('--batch_size', type=int, help='', default=0)
-    parser.add_argument('--lr', type=float, help='', default=0.0)
-    parser.add_argument('--optimizer', type=str, help='', default='SGD')
-    parser.add_argument('--max_epoch', type=int, help='', default=1000)
-    parser.add_argument('--valid_every', type=int, help='', default=1)
-    parser.add_argument('--patience', type=int, help='', default=10)
-    parser.add_argument('--dim_input', type=int, help='', default=88)
-    parser.add_argument('--dim_out', type=int, help='', default=2)
-    parser.add_argument('--drop_p', type=float, help='', default=0.3)
-    parser.add_argument('--n_cmt', type=int, help='', default=1)
-    parser.add_argument('--weight_decay', type=float, help='', default=0)
-    parser.add_argument('--momentum', type=float, help='', default=0)
-    parser.add_argument('--dim_hidden1', type=int, help='', default=0)
-    parser.add_argument('--dim_hidden2', type=int, help='', default=0)
-    parser.add_argument('--dim_hidden3', type=int, help='', default=0)
-
-    parser.add_argument('--name', type=str, help='', default='')
-    parser.add_argument('--tag', type=str, help='', default='')
-    parser.add_argument('--out_file', type=str, help='', default='')
+    parser.add_argument('--state_dim', type=int, help='', default=21)
+    parser.add_argument('--hidden_dim', type=int, help='', default=64)
+    parser.add_argument('--GRU_step', type=int, help='', default=5)
+    parser.add_argument('--lr', type=float, help='', default=0.001)
     args = parser.parse_args()
-    params = vars(args)
 
-    neptune.init('cjlee/AnomalyDetection-Supervised')
-    experiment = neptune.create_experiment(name=args.name, params=params)
-    args.out_file = experiment.id + '.pth'
-    neptune.append_tag(args.tag)
+    params = vars(args)
 
     print('parameters:')
     print('='*90)
@@ -72,4 +82,4 @@ if __name__ == '__main__':
     print('='*90)
 
     # temporary code for testing
-    train_main(args, neptune)
+    train_main(args)

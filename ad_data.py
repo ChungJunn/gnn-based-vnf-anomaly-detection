@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import torch
 
 # create annotation and adjacency matrices and dataloader
 class ad_gnn_iterator:
@@ -72,6 +73,11 @@ class ad_gnn_iterator:
         label = self.label[self.idx]
 
         self.idx += 1
+        
+        annotation = torch.tensor(annotation)
+        A_out = torch.tensor(A_out)
+        A_in = torch.tensor(A_in)
+        label = torch.tensor(label)
 
         return annotation, A_out, A_in, label
 
