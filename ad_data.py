@@ -59,13 +59,15 @@ class ad_gnn_iterator:
         # return the adj_matrix
         return A_out, A_in
 
-    def __reset__(self):
+    def reset(self):
         self.idx = 0
         return
 
     def __next__(self):
+        end_of_data=0
+
         if self.idx >= self.n_samples:
-            raise StopIteration
+            end_of_data=1
             self.reset()
 
         annotation = self.make_annotation_matrix(self.idx)
@@ -73,13 +75,13 @@ class ad_gnn_iterator:
         label = self.label[self.idx]
 
         self.idx += 1
-        
+
         annotation = torch.tensor(annotation)
         A_out = torch.tensor(A_out)
         A_in = torch.tensor(A_in)
         label = torch.tensor(label)
 
-        return annotation, A_out, A_in, label
+        return annotation, A_out, A_in, label, end_of_data
 
     def __iter__(self):
         return self
@@ -90,4 +92,4 @@ if __name__ == '__main__':
     for iloop, (anno, A_out, A_in, label) in enumerate(iter):
         print(iloop, anno.shape, A_out.shape, A_in.shape, label.shape)
         print(label)
-        
+

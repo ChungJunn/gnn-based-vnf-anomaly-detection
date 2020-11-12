@@ -1,7 +1,6 @@
 '''
 adopted from pytorch.org (Classifying names with a character-level RNN-Sean Robertson)
 '''
-
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
@@ -37,10 +36,10 @@ def train_main(args):
     # modify the dataset to produce labels
     # create a training loop
     train_loss = 0.0
-    log_interval=100
+    log_interval=1000
 
     for ei in range(1000):
-        for li, (anno, A_out, A_in, label) in enumerate(trainiter):
+        for li, (anno, A_out, A_in, label, end_of_data) in enumerate(trainiter):
             anno = anno.to(dtype=torch.float32, device=device)
             A_out = A_out.to(dtype=torch.float32, device=device)
             A_in = A_in.to(dtype=torch.float32, device=device)
@@ -60,8 +59,11 @@ def train_main(args):
         
             if li % log_interval == 999:
                 train_loss /= log_interval
-                print('epoch: {:d} | li: {:d} | train_loss: {:.4f}'.format(ei+1, li+1, train_loss))
+                print('epoch: {:d} | li: {:d}'.format(ei+1, li+1)) # | train_loss: {:.4f}'.format(ei+1, li+1, train_loss))
                 train_loss = 0
+        
+            if end_of_data == 1:
+                break
 
     return
 
