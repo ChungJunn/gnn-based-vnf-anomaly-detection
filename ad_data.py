@@ -4,19 +4,21 @@ import torch
 
 # create annotation and adjacency matrices and dataloader
 class ad_gnn_iterator:
-    def __init__(self):
-    # obtain dataset
-        fw_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/sup_train.rnn_len16.fw.csv'
-        flowmon_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/sup_train.rnn_len16.flowmon.csv'
-        dpi_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/sup_train.rnn_len16.dpi.csv'
-        ids_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/sup_train.rnn_len16.ids.csv'
-        edge_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/sup_train.rnn_len16.edges.csv'
-        label_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/sup_train.rnn_len16.label.csv'
+    def __init__(self, args, tvt):
+        fw_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.fw.csv'
+        flowmon_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.flowmon.csv'
+        dpi_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.dpi.csv'
+        ids_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.ids.csv'
+        edge_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.edges.csv'
+        label_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.label.csv'
 
-        self.firewall= np.array(pd.read_csv(fw_path))
-        self.flowmon= np.array(pd.read_csv(flowmon_path))
-        self.dpi= np.array(pd.read_csv(dpi_path))
-        self.ids= np.array(pd.read_csv(ids_path))
+        from sklearn.preprocessing import StandardScaler
+        scaler = StandardScaler()
+
+        self.firewall= scaler.fit_transform(np.array(pd.read_csv(fw_path)))
+        self.flowmon= scaler.fit_transform(np.array(pd.read_csv(flowmon_path)))
+        self.dpi= scaler.fit_transform(np.array(pd.read_csv(dpi_path)))
+        self.ids= scaler.fit_transform(np.array(pd.read_csv(ids_path)))
 
         self.edges = np.array(pd.read_csv(edge_path))
         self.label = np.array(pd.read_csv(label_path))
@@ -47,17 +49,16 @@ class ad_gnn_iterator:
 
     def make_adj_matrix(self, idx):
         # initialize the matrix
-        A_in = np.zeros([self.n_nodes, self.n_nodes])
-        A_out = np.zeros([self.n_nodes, self.n_nodes])
+        A = np.zeros([self.n_nodes, self.n_nodes])
 
+        import math
         # retrieve the related data using idx
-        for from_node in range(self.n_nodes - 1): # no edge feature for last node
-            A_in[from_node, from_node + 1] = self.edges[idx, from_node]
+        for from_node in range(self.n_nodes): # no edge feature for last node
+            A[from_node, from_node] = 1
+            A[from_node, min(from_node + 1, self.n_nodes -1)] = 1
+            A[from_node, max(from_node - 1, 0)] = 1
 
-        A_out = A_in.transpose()
-
-        # return the adj_matrix
-        return A_out, A_in
+        return A
 
     def reset(self):
         self.idx = 0
@@ -71,25 +72,34 @@ class ad_gnn_iterator:
             self.reset()
 
         annotation = self.make_annotation_matrix(self.idx)
-        A_out, A_in = self.make_adj_matrix(self.idx)
+        A = self.make_adj_matrix(self.idx)
         label = self.label[self.idx]
 
         self.idx += 1
 
         annotation = torch.tensor(annotation)
-        A_out = torch.tensor(A_out)
-        A_in = torch.tensor(A_in)
+        A = torch.tensor(A)
         label = torch.tensor(label)
 
-        return annotation, A_out, A_in, label, end_of_data
+        return annotation, A, label, end_of_data
 
     def __iter__(self):
         return self
 
 if __name__ == '__main__':
-    iter = ad_gnn_iterator()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--state_dim', type=int, help='', default=21)
+    parser.add_argument('--hidden_dim', type=int, help='', default=64)
+    parser.add_argument('--GRU_step', type=int, help='', default=5)
+    parser.add_argument('--lr', type=float, help='', default=0.001)
+    parser.add_argument('--tvt', type=str, help='', default='sup_val')
+    args = parser.parse_args()
+
+    iter = ad_gnn_iterator(args, args.tvt)
 
     for iloop, (anno, A_out, A_in, label) in enumerate(iter):
         print(iloop, anno.shape, A_out.shape, A_in.shape, label.shape)
         print(label)
+        import pdb; pdb.set_trace()
 

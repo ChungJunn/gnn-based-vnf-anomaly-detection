@@ -23,14 +23,13 @@ from ad_data import ad_gnn_iterator
 def validate(model, validiter, device, criterion):
     valid_loss = 0.0
 
-    for li, (anno, A_out, A_in, label, end_of_data) in enumerate(validiter):
+    for li, (anno, A, label, end_of_data) in enumerate(validiter):
         anno = anno.to(dtype=torch.float32, device=device)
-        A_out = A_out.to(dtype=torch.float32, device=device)
-        A_in = A_in.to(dtype=torch.float32, device=device)
+        A = A.to(dtype=torch.float32, device=device)
         label = label.to(dtype=torch.int64, device=device)
 
         # go through loss function
-        output = model(A_out, A_in, anno)
+        output = model(A, anno)
         loss = criterion(output, label)
 
         # compute loss
@@ -49,7 +48,9 @@ def train_main(args):
     model = gnn_binary_classifier(args).to(device)
 
     # declare dataset
-    trainiter = ad_gnn_iterator()
+    trainiter = ad_gnn_iterator(args, 'sup_train')
+    valiter = ad_gnn_iterator(args, 'sup_val')
+    testiter = ad_gnn_iterator(args, 'sup_test')
 
     # declare optimizer
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
@@ -61,15 +62,14 @@ def train_main(args):
     log_interval=1000
 
     for ei in range(1000):
-        for li, (anno, A_out, A_in, label, end_of_data) in enumerate(trainiter):
+        for li, (anno, A, label, end_of_data) in enumerate(trainiter):
             anno = anno.to(dtype=torch.float32, device=device)
-            A_out = A_out.to(dtype=torch.float32, device=device)
-            A_in = A_in.to(dtype=torch.float32, device=device)
+            A = A.to(dtype=torch.float32, device=device)
             label = label.to(dtype=torch.int64, device=device)
         
             optimizer.zero_grad()
 
-            output = model(A_out, A_in, anno)
+            output = model(A, anno)
 
             # go through loss function
             loss = criterion(output, label)
@@ -79,19 +79,19 @@ def train_main(args):
             optimizer.step()
             train_loss += loss.item()
         
-            if li % log_interval == 999:
-                train_loss /= log_interval
+            if li % log_interval == (log_interval - 1):
+                train_loss = train_loss / log_interval
                 print('epoch: {:d} | li: {:d} | train_loss: {:.4f}'.format(ei+1, li+1, train_loss))
                 train_loss = 0
 
             if end_of_data == 1: break
 
         # evaluation code
-        valid_loss = validate(model, trainiter, device, criterion)
+        valid_loss = validate(model, valiter, device, criterion)
         print('epoch: {:d} | li: {:d} | valid_loss: {:.4f}'.format(ei+1, li+1, valid_loss))
 
         from ad_eval import eval_main
-        eval_main(model, trainiter, device, neptune=None)
+        eval_main(model, testiter, device, neptune=None)
 
     return
 
@@ -102,6 +102,7 @@ if __name__ == '__main__':
     parser.add_argument('--hidden_dim', type=int, help='', default=64)
     parser.add_argument('--GRU_step', type=int, help='', default=5)
     parser.add_argument('--lr', type=float, help='', default=0.001)
+    parser.add_argument('--tvt', type=float, help='', default=0.001)
     args = parser.parse_args()
 
     params = vars(args)
