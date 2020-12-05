@@ -5,10 +5,10 @@ import torch
 # create annotation and adjacency matrices and dataloader
 class ad_gnn_iterator:
     def __init__(self, args, tvt):
-        fw_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.fw.csv'
-        flowmon_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.flowmon.csv'
-        dpi_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.dpi.csv'
-        ids_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.ids.csv'
+        fw_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/hop-latency-as-node-features/' + tvt + '.rnn_len16.fw.csv'
+        flowmon_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/hop-latency-as-node-features/' + tvt + '.rnn_len16.flowmon.csv'
+        dpi_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/hop-latency-as-node-features/' + tvt + '.rnn_len16.dpi.csv'
+        ids_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/hop-latency-as-node-features/' + tvt + '.rnn_len16.ids.csv'
         edge_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.edges.csv'
         label_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.label.csv'
 
@@ -49,16 +49,19 @@ class ad_gnn_iterator:
 
     def make_adj_matrix(self, idx):
         # initialize the matrix
-        A = np.zeros([self.n_nodes, self.n_nodes])
+        A_in = np.zeros([self.n_nodes, self.n_nodes])
+        A_out = np.zeros([self.n_nodes, self.n_nodes])
 
         import math
         # retrieve the related data using idx
         for from_node in range(self.n_nodes): # no edge feature for last node
-            A[from_node, from_node] = 1
-            A[from_node, min(from_node + 1, self.n_nodes -1)] = 1
-            A[from_node, max(from_node - 1, 0)] = 1
+            A_in[from_node, from_node] = 1
+            A_in[from_node, min(from_node + 1, self.n_nodes -1)] = 1
+            A_in[from_node, max(from_node - 1, 0)] = 1
 
-        return A
+        A_out = np.transpose(A_in)
+
+        return A_in, A_out
 
     def reset(self):
         self.idx = 0
@@ -72,16 +75,18 @@ class ad_gnn_iterator:
             self.reset()
 
         annotation = self.make_annotation_matrix(self.idx)
-        A = self.make_adj_matrix(self.idx)
+        A_in, A_out = self.make_adj_matrix(self.idx)
         label = self.label[self.idx]
 
         self.idx += 1
 
         annotation = torch.tensor(annotation)
-        A = torch.tensor(A)
+
+        A_in = torch.tensor(A_in)
+        A_out = torch.tensor(A_out)
         label = torch.tensor(label)
 
-        return annotation, A, label, end_of_data
+        return annotation, A_in, A_out, label, end_of_data
 
     def __iter__(self):
         return self
@@ -98,8 +103,7 @@ if __name__ == '__main__':
 
     iter = ad_gnn_iterator(args, args.tvt)
 
-    for iloop, (anno, A_out, A_in, label) in enumerate(iter):
+    for iloop, (anno, A_out, A_in, label, end_of_data) in enumerate(iter):
         print(iloop, anno.shape, A_out.shape, A_in.shape, label.shape)
         print(label)
         import pdb; pdb.set_trace()
-

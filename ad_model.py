@@ -11,9 +11,14 @@ class gnn_binary_classifier(nn.Module):
         self.args = args
         self.n_nodes = 4
 
-        self.GRUcell = nn.GRUCell(args.state_dim, args.state_dim, bias=False)
+        self.GRUcell = nn.GRUCell(2 * args.state_dim, args.state_dim, bias=False)
         self.fc1 = nn.Linear(args.state_dim * self.n_nodes, args.hidden_dim) # assume 4 nodes
         self.fc2 = nn.Linear(args.hidden_dim, 2)
+
+        if args.encoder_type == 1:
+            self.enc = self.encoder
+        else:
+            self.enc = self.encoder2
 
     def encoder(self, A, annotation):
         h = annotation
@@ -21,6 +26,21 @@ class gnn_binary_classifier(nn.Module):
         for i in range(self.args.GRU_step):
             a = torch.matmul(A, h)
             h = self.GRUcell(a, h)
+
+        enc_out = h
+        enc_out = enc_out.view(1,-1) # squash into single vector
+
+        return enc_out
+    
+    def encoder2(self, A_in, A_out, annotation):
+        h = annotation
+
+        for i in range(self.args.GRU_step):
+            m_in = torch.matmul(A_in, h)
+            m_out = torch.matmul(A_out, h)
+
+            m_all = torch.cat((m_in, m_out), dim=1)
+            h = self.GRUcell(m_all, h)
 
         enc_out = h
         enc_out = enc_out.view(1,-1) # squash into single vector
@@ -34,9 +54,9 @@ class gnn_binary_classifier(nn.Module):
 
         return F.log_softmax(x, dim=1)
 
-    def forward(self, A, annotation):
+    def forward(self, A_in, A_out, annotation):
 
-        x = self.encoder(A, annotation)
+        x = self.enc(A_in, A_out, annotation)
         x = self.classifier(x)
 
         return x
@@ -47,4 +67,3 @@ class gnn_binary_classifier(nn.Module):
 # setup args variables
 
 # setup variables 
-
