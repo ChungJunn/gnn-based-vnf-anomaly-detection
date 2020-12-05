@@ -54,7 +54,8 @@ def train_main(args, neptune):
     testiter = ad_gnn_iterator(args, 'sup_test')
 
     # declare optimizer
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    estring = "optim." + args.optimizer
+    optimizer = eval(estring)(model.parameters(), lr=args.lr)
 
     # modify the dataset to produce labels
     # create a training loop
@@ -124,9 +125,8 @@ if __name__ == '__main__':
     parser.add_argument('--state_dim', type=int, help='', default=22)
     parser.add_argument('--hidden_dim', type=int, help='', default=64)
     parser.add_argument('--GRU_step', type=int, help='', default=5)
-    parser.add_argument('--encoder_type', type=int, help='', default=2, choices=range(1,3))
+    parser.add_argument('--optimizer', type=str, help='', default='SGD')
     parser.add_argument('--lr', type=float, help='', default=0.001)
-    parser.add_argument('--tvt', type=float, help='', default=0.001)
     args = parser.parse_args()
 
     params = vars(args)

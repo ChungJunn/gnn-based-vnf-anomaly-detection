@@ -15,24 +15,9 @@ class gnn_binary_classifier(nn.Module):
         self.fc1 = nn.Linear(args.state_dim * self.n_nodes, args.hidden_dim) # assume 4 nodes
         self.fc2 = nn.Linear(args.hidden_dim, 2)
 
-        if args.encoder_type == 1:
-            self.enc = self.encoder
-        else:
-            self.enc = self.encoder2
+        self.enc = self.encoder
 
-    def encoder(self, A, annotation):
-        h = annotation
-
-        for i in range(self.args.GRU_step):
-            a = torch.matmul(A, h)
-            h = self.GRUcell(a, h)
-
-        enc_out = h
-        enc_out = enc_out.view(1,-1) # squash into single vector
-
-        return enc_out
-    
-    def encoder2(self, A_in, A_out, annotation):
+    def encoder(self, A_in, A_out, annotation):
         h = annotation
 
         for i in range(self.args.GRU_step):
