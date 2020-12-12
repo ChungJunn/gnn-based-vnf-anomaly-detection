@@ -88,15 +88,16 @@ def train_main(args, neptune):
             if li % log_interval == (log_interval - 1):
                 train_loss = train_loss / log_interval
                 print('epoch: {:d} | li: {:d} | train_loss: {:.4f}'.format(ei+1, li+1, train_loss))
-                neptune.log_metric('train loss', li, train_loss)
+                if neptune is not None: neptune.log_metric('train loss', li, train_loss)
                 train_loss = 0
 
             if end_of_data == 1: break
 
         # evaluation code
         valid_loss = validate(model, valiter, device, criterion)
-        print('epoch: {:d} | li: {:d} | valid_loss: {:.4f}'.format(ei+1, li+1, valid_loss))
-        neptune.log_metric('valid loss', ei, valid_loss)
+        print('epoch: {:d} | valid_loss: {:.4f}'.format(ei+1, valid_loss))
+        eval_main(model, testiter, device, neptune=neptune)
+        if neptune is not None: neptune.log_metric('valid loss', ei, valid_loss)
 
         # need to implement early-stop
         if ei == 0 or valid_loss < best_val:
@@ -122,18 +123,23 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str, help='', default='exp_name')
     parser.add_argument('--patience', type=int, help='', default=5)
-    parser.add_argument('--state_dim', type=int, help='', default=22)
+    parser.add_argument('--state_dim', type=int, help='', default=21)
     parser.add_argument('--hidden_dim', type=int, help='', default=64)
     parser.add_argument('--GRU_step', type=int, help='', default=5)
     parser.add_argument('--optimizer', type=str, help='', default='SGD')
     parser.add_argument('--lr', type=float, help='', default=0.001)
+    parser.add_argument('--out_file', type=str, help='', default='default.pth')
     args = parser.parse_args()
 
     params = vars(args)
 
+    '''
     neptune.init('cjlee/AnomalyDetection-GNN')
     experiment = neptune.create_experiment(name=args.exp_name, params=params)
     args.out_file = experiment.id + '.pth'
+    '''
+
+    neptune = None
 
     print('parameters:')
     print('='*90)

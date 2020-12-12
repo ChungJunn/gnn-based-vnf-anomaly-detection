@@ -5,22 +5,23 @@ import torch
 # create annotation and adjacency matrices and dataloader
 class ad_gnn_iterator:
     def __init__(self, args, tvt):
-        fw_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/hop-latency-as-node-features/' + tvt + '.rnn_len16.fw.csv'
-        flowmon_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/hop-latency-as-node-features/' + tvt + '.rnn_len16.flowmon.csv'
-        dpi_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/hop-latency-as-node-features/' + tvt + '.rnn_len16.dpi.csv'
-        ids_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/hop-latency-as-node-features/' + tvt + '.rnn_len16.ids.csv'
+        fw_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.fw.csv'
+        flowmon_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.flowmon.csv'
+        dpi_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.dpi.csv'
+        ids_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.ids.csv'
         edge_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.edges.csv'
         label_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.label.csv'
 
-        from sklearn.preprocessing import StandardScaler
+        from sklearn.preprocessing import StandardScaler, MinMaxScaler
         scaler = StandardScaler()
+        mm_scaler = MinMaxScaler()
 
         self.firewall= scaler.fit_transform(np.array(pd.read_csv(fw_path)))
         self.flowmon= scaler.fit_transform(np.array(pd.read_csv(flowmon_path)))
         self.dpi= scaler.fit_transform(np.array(pd.read_csv(dpi_path)))
         self.ids= scaler.fit_transform(np.array(pd.read_csv(ids_path)))
 
-        self.edges = np.array(pd.read_csv(edge_path))
+        self.edges = mm_scaler.fit_transform(np.array(pd.read_csv(edge_path)))
         self.label = np.array(pd.read_csv(label_path))
 
         # initialize some stuff
@@ -47,21 +48,27 @@ class ad_gnn_iterator:
 
         return annotation
 
-    def make_adj_matrix(self, idx):
+    def make_adj_matrix(self, idx, direction='forward', recur_p=0.7):
         # initialize the matrix
         A_in = np.zeros([self.n_nodes, self.n_nodes])
         A_out = np.zeros([self.n_nodes, self.n_nodes])
+        A_in += -np.inf
 
-        import math
-        # retrieve the related data using idx
-        for from_node in range(self.n_nodes): # no edge feature for last node
-            A_in[from_node, from_node] = 1
-            A_in[from_node, min(from_node + 1, self.n_nodes -1)] = 1
-            A_in[from_node, max(from_node - 1, 0)] = 1
+        import math # retrieve the related data using idx
+        if direction == 'forward':
+            for from_node in range(self.n_nodes): # no edge feature for last node
+                A_in[from_node, from_node] = recur_p
+                A_in[from_node, min(from_node + 1, self.n_nodes -1)] = \
+                    (1 - recur_p) * self.edges[idx, from_node]
+                # A_in[from_node, max(from_node - 1, 0)] = 1
 
-        A_out = np.transpose(A_in)
+            # normalize using softmax
+            from scipy.special import softmax
+            A_in = softmax(A_in, axis=0)
 
-        return A_in, A_out
+            A_out += A_in
+
+            return A_in, A_out
 
     def reset(self):
         self.idx = 0
