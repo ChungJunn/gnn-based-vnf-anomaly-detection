@@ -17,6 +17,7 @@ import time
 import argparse
 import neptune
 
+from ad_eval import eval_main
 from ad_model import gnn_binary_classifier
 from ad_data import ad_gnn_iterator
 
@@ -49,9 +50,9 @@ def train_main(args, neptune):
     model = gnn_binary_classifier(args).to(device)
 
     # declare dataset
-    trainiter = ad_gnn_iterator(args, 'sup_train')
-    valiter = ad_gnn_iterator(args, 'sup_val')
-    testiter = ad_gnn_iterator(args, 'sup_test')
+    trainiter = ad_gnn_iterator(args, 'sup_train', direction=args.direction)
+    valiter = ad_gnn_iterator(args, 'sup_val', direction=args.direction)
+    testiter = ad_gnn_iterator(args, 'sup_test', direction=args.direction)
 
     # declare optimizer
     estring = "optim." + args.optimizer
@@ -92,6 +93,7 @@ def train_main(args, neptune):
                 train_loss = 0
 
             if end_of_data == 1: break
+            if li == 1000: break # TODO temporary add
 
         # evaluation code
         valid_loss = validate(model, valiter, device, criterion)
@@ -113,7 +115,6 @@ def train_main(args, neptune):
             print('bad counter == %d' % (bc))
 
     model = torch.load(savedir)
-    from ad_eval import eval_main
     eval_main(model, testiter, device, neptune=neptune)
 
     return
@@ -129,6 +130,7 @@ if __name__ == '__main__':
     parser.add_argument('--optimizer', type=str, help='', default='SGD')
     parser.add_argument('--lr', type=float, help='', default=0.001)
     parser.add_argument('--out_file', type=str, help='', default='default.pth')
+    parser.add_argument('--direction', type=str, help='', default='bi-direction')
     args = parser.parse_args()
 
     params = vars(args)

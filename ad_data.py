@@ -4,13 +4,20 @@ import torch
 
 # create annotation and adjacency matrices and dataloader
 class ad_gnn_iterator:
-    def __init__(self, args, tvt):
-        fw_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.fw.csv'
-        flowmon_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.flowmon.csv'
-        dpi_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.dpi.csv'
-        ids_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.ids.csv'
-        edge_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.edges.csv'
-        label_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + tvt + '.rnn_len16.label.csv'
+    def __init__(self, args, tvt, direction='forward', use_edge=False):
+        if use_edge:
+            fw_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+                    tvt + '.rnn_len16.fw.csv'
+            flowmon_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+                    tvt + '.rnn_len16.flowmon.csv'
+            dpi_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' +\
+                    tvt + '.rnn_len16.dpi.csv'
+            ids_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+                    tvt + '.rnn_len16.ids.csv'
+            edge_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+                    tvt + '.rnn_len16.edges.csv'
+            label_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+                    tvt + '.rnn_len16.label.csv'
 
         from sklearn.preprocessing import StandardScaler, MinMaxScaler
         scaler = StandardScaler()
@@ -37,6 +44,8 @@ class ad_gnn_iterator:
         self.n_node_features = self.firewall.shape[1]
         self.n_edge_features = 1
 
+        self.direction = direction
+
     def make_annotation_matrix(self, idx):
         # initialize the matrix
         annotation = np.zeros([self.n_nodes, self.n_node_features])
@@ -55,20 +64,23 @@ class ad_gnn_iterator:
         A_in += -np.inf
 
         import math # retrieve the related data using idx
-        if direction == 'forward':
-            for from_node in range(self.n_nodes): # no edge feature for last node
-                A_in[from_node, from_node] = recur_p
-                A_in[from_node, min(from_node + 1, self.n_nodes -1)] = \
-                    (1 - recur_p) * self.edges[idx, from_node]
-                # A_in[from_node, max(from_node - 1, 0)] = 1
+        for from_node in range(self.n_nodes): # no edge feature for last node
+            A_in[from_node, from_node] = recur_p
 
-            # normalize using softmax
-            from scipy.special import softmax
-            A_in = softmax(A_in, axis=0)
+            if from_node < (self.n_nodes - 1):
+                A_in[from_node, from_node + 1] = \
+                        (1 - recur_p) * self.edges[idx, from_node]
 
-            A_out += A_in
+            if direction == 'bi-direction' and from_node > 0:
+                A_in[from_node, from_node - 1] = \
+                        (1 - recur_p) * self.edges[idx, from_node-1]
 
-            return A_in, A_out
+        # normalize using softmax
+        from scipy.special import softmax
+        A_in = softmax(A_in, axis=0)
+        A_out += A_in
+
+        return A_in, A_out
 
     def reset(self):
         self.idx = 0
@@ -82,7 +94,7 @@ class ad_gnn_iterator:
             self.reset()
 
         annotation = self.make_annotation_matrix(self.idx)
-        A_in, A_out = self.make_adj_matrix(self.idx)
+        A_in, A_out = self.make_adj_matrix(self.idx, self.direction)
         label = self.label[self.idx]
 
         self.idx += 1
