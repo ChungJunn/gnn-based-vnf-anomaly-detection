@@ -50,9 +50,9 @@ def train_main(args, neptune):
     model = gnn_binary_classifier(args).to(device)
 
     # declare dataset
-    trainiter = ad_gnn_iterator(args, 'sup_train', direction=args.direction)
-    valiter = ad_gnn_iterator(args, 'sup_val', direction=args.direction)
-    testiter = ad_gnn_iterator(args, 'sup_test', direction=args.direction)
+    trainiter = ad_gnn_iterator(args, 'sup_train', direction=args.direction, use_edge=args.use_edge)
+    valiter = ad_gnn_iterator(args, 'sup_val', direction=args.direction, use_edge=args.use_edge)
+    testiter = ad_gnn_iterator(args, 'sup_test', direction=args.direction, use_edge=args.use_edge)
 
     # declare optimizer
     estring = "optim." + args.optimizer
@@ -93,12 +93,10 @@ def train_main(args, neptune):
                 train_loss = 0
 
             if end_of_data == 1: break
-            if li == 1000: break # TODO temporary add
 
         # evaluation code
         valid_loss = validate(model, valiter, device, criterion)
         print('epoch: {:d} | valid_loss: {:.4f}'.format(ei+1, valid_loss))
-        eval_main(model, testiter, device, neptune=neptune)
         if neptune is not None: neptune.log_metric('valid loss', ei, valid_loss)
 
         # need to implement early-stop
@@ -124,7 +122,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str, help='', default='exp_name')
     parser.add_argument('--patience', type=int, help='', default=5)
-    parser.add_argument('--state_dim', type=int, help='', default=21)
+    parser.add_argument('--use_edge', type=int, help='', default=1)
+    parser.add_argument('--state_dim', type=int, help='', default=22)
     parser.add_argument('--hidden_dim', type=int, help='', default=64)
     parser.add_argument('--GRU_step', type=int, help='', default=5)
     parser.add_argument('--optimizer', type=str, help='', default='SGD')
@@ -133,15 +132,16 @@ if __name__ == '__main__':
     parser.add_argument('--direction', type=str, help='', default='bi-direction')
     args = parser.parse_args()
 
+    if args.use_edge == 1:
+        args.use_edge=True
+    else:
+        args.use_edge=False
+
     params = vars(args)
 
-    '''
     neptune.init('cjlee/AnomalyDetection-GNN')
     experiment = neptune.create_experiment(name=args.exp_name, params=params)
     args.out_file = experiment.id + '.pth'
-    '''
-
-    neptune = None
 
     print('parameters:')
     print('='*90)
