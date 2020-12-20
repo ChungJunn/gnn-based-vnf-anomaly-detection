@@ -100,8 +100,6 @@ class ad_gnn_iterator:
         A_in = softmax(A_in, axis=0)
         A_out += A_in
 
-        import pdb; pdb.set_trace()
-
         return A_in, A_out
 
     def reset(self):
@@ -111,7 +109,7 @@ class ad_gnn_iterator:
     def __next__(self):
         end_of_data=0
 
-        if self.idx >= self.n_samples:
+        if self.idx >= (self.n_samples - 1):
             end_of_data=1
             self.reset()
 

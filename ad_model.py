@@ -12,10 +12,11 @@ class gnn_binary_classifier(nn.Module):
         self.n_nodes = 4
 
         self.GRUcell = nn.GRUCell(2 * args.state_dim, args.state_dim, bias=False)
-        self.fc1 = nn.Linear(args.state_dim * self.n_nodes, args.hidden_dim) # assume 4 nodes
+        self.fc1 = nn.Linear(args.state_dim, args.hidden_dim)
         self.fc2 = nn.Linear(args.hidden_dim, 2)
 
         self.enc = self.encoder
+        self.reduce = args.reduce # either 'mean' or 'max'
 
     def encoder(self, A_in, A_out, annotation):
         h = annotation
@@ -27,8 +28,10 @@ class gnn_binary_classifier(nn.Module):
             m_all = torch.cat((m_in, m_out), dim=1)
             h = self.GRUcell(m_all, h)
 
-        enc_out = h
-        enc_out = enc_out.view(1,-1) # squash into single vector
+        if self.reduce == 'mean':
+            enc_out = torch.avg(h, dim=0, keepdim=True)
+        elif self.reduce == 'max':
+            enc_out = torch.mean(h, dim=0, keepdim=True)
 
         return enc_out
 

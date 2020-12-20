@@ -66,6 +66,7 @@ def train_main(args, neptune):
     bc = 0
     best_val = None
     savedir = './result/' + args.out_file
+    n_samples = trainiter.n_samples
 
     for ei in range(1000):
         for li, (anno, A_in, A_out, label, end_of_data) in enumerate(trainiter):
@@ -89,7 +90,7 @@ def train_main(args, neptune):
             if li % log_interval == (log_interval - 1):
                 train_loss = train_loss / log_interval
                 print('epoch: {:d} | li: {:d} | train_loss: {:.4f}'.format(ei+1, li+1, train_loss))
-                if neptune is not None: neptune.log_metric('train loss', li, train_loss)
+                if neptune is not None: neptune.log_metric('train loss', (ei*n_samples)+(li+1), train_loss)
                 train_loss = 0
 
             if end_of_data == 1: break
@@ -112,8 +113,15 @@ def train_main(args, neptune):
                 break
             print('bad counter == %d' % (bc))
 
+        break # TODO
+
     model = torch.load(savedir)
-    eval_main(model, testiter, device, neptune=neptune)
+    acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=neptune)
+
+    neptune.set_property('acc', acc)
+    neptune.set_property('prec', prec)
+    neptune.set_property('rec', rec)
+    neptune.set_property('f1', f1)
 
     return
 
@@ -122,7 +130,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str, help='', default='exp_name')
     parser.add_argument('--patience', type=int, help='', default=5)
-    parser.add_argument('--use_edge', type=int, help='', default=1)
+    parser.add_argument('--use_edge', type=int, help='', default=0)
     parser.add_argument('--state_dim', type=int, help='', default=22)
     parser.add_argument('--hidden_dim', type=int, help='', default=64)
     parser.add_argument('--GRU_step', type=int, help='', default=5)
@@ -130,6 +138,8 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, help='', default=0.001)
     parser.add_argument('--out_file', type=str, help='', default='default.pth')
     parser.add_argument('--direction', type=str, help='', default='bi-direction')
+    parser.add_argument('--reduce', type=str, help='', default='max')
+
     args = parser.parse_args()
 
     if args.use_edge == 1:

@@ -38,4 +38,4 @@ def eval_main(model, validiter, device, neptune=None):
 
     print(acc, prec, rec, f1)
 
-    return
+    return acc, prec, rec, f1
