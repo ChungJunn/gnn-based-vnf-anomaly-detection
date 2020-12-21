@@ -29,9 +29,9 @@ class gnn_binary_classifier(nn.Module):
             h = self.GRUcell(m_all, h)
 
         if self.reduce == 'mean':
-            enc_out = torch.avg(h, dim=0, keepdim=True)
-        elif self.reduce == 'max':
             enc_out = torch.mean(h, dim=0, keepdim=True)
+        elif self.reduce == 'max':
+            enc_out = torch.max(h, dim=0, keepdim=True)
 
         return enc_out
 

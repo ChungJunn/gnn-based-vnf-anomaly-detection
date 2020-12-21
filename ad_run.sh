@@ -7,13 +7,13 @@ GRU_STEP=5
 OPTIMIZER='SGD'
 LR=0.001
 OUT_FILE='default.pth'
-DIRECTION=$3
+DIRECTION='bi-direction'
 RECUR_P=0.7
 REDUCE='mean'
 
 export CUDA_VISIBLE_DEVICES=$1
 
-for i in 1 2 3
+for i in 1
 do
     echo $i'th run'
     python3 ad_main.py  --exp_name=$EXP_NAME \

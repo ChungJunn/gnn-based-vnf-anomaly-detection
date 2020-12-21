@@ -13,11 +13,8 @@ class ad_gnn_iterator:
                 tvt + '.rnn_len16.dpi.csv'
         ids_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
                 tvt + '.rnn_len16.ids.csv'
-        edge_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
-                tvt + '.rnn_len16.edges.csv'
         label_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
                 tvt + '.rnn_len16.label.csv'
-
 
         from sklearn.preprocessing import StandardScaler, MinMaxScaler
         scaler = StandardScaler()
@@ -28,7 +25,6 @@ class ad_gnn_iterator:
         self.dpi= scaler.fit_transform(np.array(pd.read_csv(dpi_path)))
         self.ids= scaler.fit_transform(np.array(pd.read_csv(ids_path)))
 
-        self.edges = mm_scaler.fit_transform(np.array(pd.read_csv(edge_path)))
         self.label = np.array(pd.read_csv(label_path))
 
         # initialize some stuff
@@ -64,9 +60,8 @@ class ad_gnn_iterator:
         A_out = np.zeros([self.n_nodes, self.n_nodes])
         A_in += -np.inf
 
-        if not use_edge:
-            n_edges = 1.0 if direction=='forward' else 2.0
-            edge_weight = (1 - recur_p) / n_edges
+        n_edges = 1.0 if direction=='forward' else 2.0
+        edge_weight = (1 - recur_p) / n_edges
 
         import math # retrieve the related data using idx
         for from_node in range(self.n_nodes): # no edge feature for last node
@@ -97,8 +92,7 @@ class ad_gnn_iterator:
             self.reset()
 
         annotation = self.make_annotation_matrix(self.idx)
-        A_in, A_out = self.make_adj_matrix(self.idx, direction=self.direction,
-                use_edge=self.use_edge, recur_p=self.recur_p)
+        A_in, A_out = self.make_adj_matrix(self.idx, direction=self.direction,recur_p=self.recur_p)
 
         label = self.label[self.idx]
 
