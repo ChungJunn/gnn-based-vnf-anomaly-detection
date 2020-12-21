@@ -50,9 +50,9 @@ def train_main(args, neptune):
     model = gnn_binary_classifier(args).to(device)
 
     # declare dataset
-    trainiter = ad_gnn_iterator(args, 'sup_train', direction=args.direction, use_edge=args.use_edge)
-    valiter = ad_gnn_iterator(args, 'sup_val', direction=args.direction, use_edge=args.use_edge)
-    testiter = ad_gnn_iterator(args, 'sup_test', direction=args.direction, use_edge=args.use_edge)
+    trainiter = ad_gnn_iterator(args, 'sup_train', direction=args.direction)
+    valiter = ad_gnn_iterator(args, 'sup_val', direction=args.direction)
+    testiter = ad_gnn_iterator(args, 'sup_test', direction=args.direction)
 
     # declare optimizer
     estring = "optim." + args.optimizer
@@ -130,7 +130,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str, help='', default='exp_name')
     parser.add_argument('--patience', type=int, help='', default=5)
-    parser.add_argument('--use_edge', type=int, help='', default=0)
     parser.add_argument('--state_dim', type=int, help='', default=22)
     parser.add_argument('--hidden_dim', type=int, help='', default=64)
     parser.add_argument('--GRU_step', type=int, help='', default=5)
@@ -141,11 +140,6 @@ if __name__ == '__main__':
     parser.add_argument('--reduce', type=str, help='', default='max')
 
     args = parser.parse_args()
-
-    if args.use_edge == 1:
-        args.use_edge=True
-    else:
-        args.use_edge=False
 
     params = vars(args)
 

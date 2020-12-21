@@ -4,33 +4,19 @@ import torch
 
 # create annotation and adjacency matrices and dataloader
 class ad_gnn_iterator:
-    def __init__(self, args, tvt, direction='forward', use_edge=False, recur_p=0.7):
-        if use_edge:
-            fw_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
-                    tvt + '.rnn_len16.fw.csv'
-            flowmon_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
-                    tvt + '.rnn_len16.flowmon.csv'
-            dpi_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' +\
-                    tvt + '.rnn_len16.dpi.csv'
-            ids_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
-                    tvt + '.rnn_len16.ids.csv'
-            edge_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
-                    tvt + '.rnn_len16.edges.csv'
-            label_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
-                    tvt + '.rnn_len16.label.csv'
-        else:
-            fw_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
-                    'hop-latency-as-node-features/' + tvt + '.rnn_len16.fw.csv'
-            flowmon_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
-                    'hop-latency-as-node-features/' + tvt + '.rnn_len16.flowmon.csv'
-            dpi_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' +\
-                    'hop-latency-as-node-features/' + tvt + '.rnn_len16.dpi.csv'
-            ids_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
-                    'hop-latency-as-node-features/' + tvt + '.rnn_len16.ids.csv'
-            edge_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
-                    tvt + '.rnn_len16.edges.csv'
-            label_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
-                    tvt + '.rnn_len16.label.csv'
+    def __init__(self, args, tvt, direction='forward', recur_p=0.7):
+        fw_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+                tvt + '.rnn_len16.fw.csv'
+        flowmon_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+                tvt + '.rnn_len16.flowmon.csv'
+        dpi_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+                tvt + '.rnn_len16.dpi.csv'
+        ids_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+                tvt + '.rnn_len16.ids.csv'
+        edge_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+                tvt + '.rnn_len16.edges.csv'
+        label_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+                tvt + '.rnn_len16.label.csv'
 
 
         from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -59,7 +45,6 @@ class ad_gnn_iterator:
         self.n_edge_features = 1
 
         self.direction = direction
-        self.use_edge = use_edge
         self.recur_p = recur_p
 
     def make_annotation_matrix(self, idx):
@@ -73,7 +58,7 @@ class ad_gnn_iterator:
 
         return annotation
 
-    def make_adj_matrix(self, idx, direction='forward', use_edge=True, recur_p=0.7):
+    def make_adj_matrix(self, idx, direction='forward', recur_p=0.7):
         # initialize the matrix
         A_in = np.zeros([self.n_nodes, self.n_nodes])
         A_out = np.zeros([self.n_nodes, self.n_nodes])
@@ -88,12 +73,10 @@ class ad_gnn_iterator:
             A_in[from_node, from_node] = recur_p
 
             if from_node < (self.n_nodes - 1):
-                A_in[from_node, from_node + 1] = \
-                        (1 - recur_p) * self.edges[idx, from_node] if use_edge else edge_weight
+                A_in[from_node, from_node + 1] = edge_weight
 
             if direction == 'bi-direction' and from_node > 0:
-                A_in[from_node, from_node - 1] = \
-                        (1 - recur_p) * self.edges[idx, from_node-1] if use_edge else edge_weight
+                A_in[from_node, from_node - 1] = edge_weight
 
         # normalize using softmax
         from scipy.special import softmax
