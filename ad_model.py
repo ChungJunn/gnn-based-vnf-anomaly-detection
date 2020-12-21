@@ -31,7 +31,8 @@ class gnn_binary_classifier(nn.Module):
         if self.reduce == 'mean':
             enc_out = torch.mean(h, dim=0, keepdim=True)
         elif self.reduce == 'max':
-            enc_out = torch.max(h, dim=0, keepdim=True)
+            input_max, input_index  = torch.max(h, dim=0, keepdim=True)
+            enc_out = input_max
 
         return enc_out
 
