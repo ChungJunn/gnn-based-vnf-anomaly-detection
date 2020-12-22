@@ -7,10 +7,10 @@ GRU_STEP=5
 OPTIMIZER='SGD'
 LR=0.001
 OUT_FILE='default.pth'
-DIRECTION='bi-direction' #'bi-direction'
+DIRECTION=$2 #'bi-direction'
 RECUR_P=0.7
-REDUCE='mean' #'mean'
-DATASET='cnsm_exp2_1' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+REDUCE=$3 #'mean'
+DATASET=$4 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 
 export CUDA_VISIBLE_DEVICES=$1
 
@@ -26,5 +26,6 @@ do
                         --lr=$LR \
                         --out_file=$OUT_FILE \
                         --direction=$DIRECTION \
-                        --reduce=$REDUCE
+                        --reduce=$REDUCE \
+                        --dataset=$DATASET
 done
