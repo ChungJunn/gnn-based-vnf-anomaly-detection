@@ -126,17 +126,17 @@ def train_main(args, neptune):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', type=str, help='', default='exp_name')
-    parser.add_argument('--patience', type=int, help='', default=5)
-    parser.add_argument('--state_dim', type=int, help='', default=22)
-    parser.add_argument('--hidden_dim', type=int, help='', default=64)
-    parser.add_argument('--GRU_step', type=int, help='', default=5)
-    parser.add_argument('--optimizer', type=str, help='', default='SGD')
-    parser.add_argument('--lr', type=float, help='', default=0.001)
-    parser.add_argument('--out_file', type=str, help='', default='default.pth')
-    parser.add_argument('--direction', type=str, help='', default='bi-direction')
-    parser.add_argument('--reduce', type=str, help='', default='max')
-    parser.add_argument('--dataset', type=str, help='', default='cnsm_exp2_2')
+    parser.add_argument('--exp_name', type=str)
+    parser.add_argument('--patience', type=int)
+    parser.add_argument('--state_dim', type=int)
+    parser.add_argument('--hidden_dim', type=int)
+    parser.add_argument('--GRU_step', type=int)
+    parser.add_argument('--optimizer', type=str)
+    parser.add_argument('--lr', type=float)
+    parser.add_argument('--out_file', type=str)
+    parser.add_argument('--direction', type=str)
+    parser.add_argument('--reduce', type=str)
+    parser.add_argument('--dataset', type=str)
 
     args = parser.parse_args()
 

@@ -11,15 +11,15 @@ class ad_gnn_iterator:
             print('dataset must be either cnsm_ex1, exp2_2, or exp2_2')
             import sys; sys.exit(-1)
 
-        fw_path = '/home/mi-lab02/autoregressor/data/' + dataset +'_data/gnn_data/' + \
+        fw_path = '/home/chl/autoregressor/data/' + dataset +'_data/gnn_data/' + \
                 tvt + '.rnn_len16.fw.csv'
-        flowmon_path = '/home/mi-lab02/autoregressor/data/' + dataset + '_data/gnn_data/' + \
+        flowmon_path = '/home/chl/autoregressor/data/' + dataset + '_data/gnn_data/' + \
                 tvt + '.rnn_len16.flowmon.csv'
-        dpi_path = '/home/mi-lab02/autoregressor/data/' + dataset + '_data/gnn_data/' + \
+        dpi_path = '/home/chl/autoregressor/data/' + dataset + '_data/gnn_data/' + \
                 tvt + '.rnn_len16.dpi.csv'
-        ids_path = '/home/mi-lab02/autoregressor/data/' + dataset + '_data/gnn_data/' + \
+        ids_path = '/home/chl/autoregressor/data/' + dataset + '_data/gnn_data/' + \
                 tvt + '.rnn_len16.ids.csv'
-        label_path = '/home/mi-lab02/autoregressor/data/' + dataset + '_data/gnn_data/' + \
+        label_path = '/home/chl/autoregressor/data/' + dataset + '_data/gnn_data/' + \
                 tvt + '.rnn_len16.label.csv'
 
         from sklearn.preprocessing import StandardScaler, MinMaxScaler
