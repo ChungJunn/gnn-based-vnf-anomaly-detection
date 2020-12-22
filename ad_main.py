@@ -113,8 +113,6 @@ def train_main(args, neptune):
                 break
             print('bad counter == %d' % (bc))
 
-        break
-
     model = torch.load(savedir)
     acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=neptune)
 

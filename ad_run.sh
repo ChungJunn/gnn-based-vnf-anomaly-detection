@@ -10,7 +10,7 @@ OUT_FILE='default.pth'
 DIRECTION='bi-direction' #'bi-direction'
 RECUR_P=0.7
 REDUCE='mean' #'mean'
-DATASET='cnsm_exp2_2' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+DATASET='cnsm_exp2_1' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 
 export CUDA_VISIBLE_DEVICES=$1
 
