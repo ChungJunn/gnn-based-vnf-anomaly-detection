@@ -50,9 +50,9 @@ def train_main(args, neptune):
     model = gnn_binary_classifier(args).to(device)
 
     # declare dataset
-    trainiter = ad_gnn_iterator(args, 'sup_train', direction=args.direction)
-    valiter = ad_gnn_iterator(args, 'sup_val', direction=args.direction)
-    testiter = ad_gnn_iterator(args, 'sup_test', direction=args.direction)
+    trainiter = ad_gnn_iterator(tvt='sup_train', dataset=args.dataset, direction=args.direction)
+    valiter = ad_gnn_iterator(tvt='sup_val', dataset=args.dataset, direction=args.direction)
+    testiter = ad_gnn_iterator(tvt='sup_test', dataset=args.dataset, direction=args.direction)
 
     # declare optimizer
     estring = "optim." + args.optimizer
@@ -138,6 +138,7 @@ if __name__ == '__main__':
     parser.add_argument('--out_file', type=str, help='', default='default.pth')
     parser.add_argument('--direction', type=str, help='', default='bi-direction')
     parser.add_argument('--reduce', type=str, help='', default='max')
+    parser.add_argument('--dataset', type=str, help='', default='cnsm_exp2_2')
 
     args = parser.parse_args()
 

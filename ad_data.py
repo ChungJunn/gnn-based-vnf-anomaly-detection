@@ -4,16 +4,22 @@ import torch
 
 # create annotation and adjacency matrices and dataloader
 class ad_gnn_iterator:
-    def __init__(self, args, tvt, direction='forward', recur_p=0.7):
-        fw_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+    def __init__(self, tvt, dataset, direction='forward', recur_p=0.7):
+
+        datasets = ['cnsm_exp1','cnsm_exp2_1','cnsm_exp2_2']
+        if dataset not in datasets:
+            print('dataset must be either cnsm_ex1, exp2_2, or exp2_2')
+            import sys; sys.exit(-1)
+
+        fw_path = '/home/mi-lab02/autoregressor/data/' + dataset +'_data/gnn_data/' + \
                 tvt + '.rnn_len16.fw.csv'
-        flowmon_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+        flowmon_path = '/home/mi-lab02/autoregressor/data/' + dataset + '_data/gnn_data/' + \
                 tvt + '.rnn_len16.flowmon.csv'
-        dpi_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+        dpi_path = '/home/mi-lab02/autoregressor/data/' + dataset + '_data/gnn_data/' + \
                 tvt + '.rnn_len16.dpi.csv'
-        ids_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+        ids_path = '/home/mi-lab02/autoregressor/data/' + dataset + '_data/gnn_data/' + \
                 tvt + '.rnn_len16.ids.csv'
-        label_path = '/home/mi-lab02/autoregressor/data/cnsm_exp2_2_data/gnn_data/' + \
+        label_path = '/home/mi-lab02/autoregressor/data/' + dataset + '_data/gnn_data/' + \
                 tvt + '.rnn_len16.label.csv'
 
         from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -117,9 +123,11 @@ if __name__ == '__main__':
     parser.add_argument('--GRU_step', type=int, help='', default=5)
     parser.add_argument('--lr', type=float, help='', default=0.001)
     parser.add_argument('--tvt', type=str, help='', default='sup_val')
+    parser.add_argument('--dataset', type=str, help='', default='cnsm_exp2_2')
+    parser.add_argument('--direction', type=str, help='', default='forward')
     args = parser.parse_args()
 
-    iter = ad_gnn_iterator(args, args.tvt)
+    iter = ad_gnn_iterator(tvt = args.tvt, dataset=args.dataset, direction=args.direction)
 
     for iloop, (anno, A_out, A_in, label, end_of_data) in enumerate(iter):
         print(iloop, anno.shape, A_out.shape, A_in.shape, label.shape)
