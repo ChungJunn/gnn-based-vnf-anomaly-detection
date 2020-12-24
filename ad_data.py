@@ -46,7 +46,6 @@ class ad_gnn_iterator:
         # initialize the matrix
         A_in = np.zeros([self.n_nodes, self.n_nodes])
         A_out = np.zeros([self.n_nodes, self.n_nodes])
-        A_in += -np.inf
 
         n_edges = 1.0 if direction=='forward' else 2.0
         edge_weight = (1 - recur_p) / n_edges
@@ -62,9 +61,11 @@ class ad_gnn_iterator:
                 A_in[from_node, from_node - 1] = edge_weight
 
         # normalize using softmax
-        from scipy.special import softmax
-        A_in = softmax(A_in, axis=0)
+        # from scipy.special import softmax
+        # A_in = softmax(A_in, axis=0)
         A_out += A_in
+
+        import pdb; pdb.set_trace()
 
         return A_in, A_out
 
