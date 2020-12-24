@@ -4,48 +4,30 @@ import torch
 
 # create annotation and adjacency matrices and dataloader
 class ad_gnn_iterator:
-    def __init__(self, tvt, dataset, direction='forward', recur_p=0.7):
+    def __init__(self, tvt, data_dir, csv_files, direction='forward', recur_p=0.7):
+        ## replace with add tvt to the dataset paths
+        csv_paths=[]
 
-        datasets = ['cnsm_exp1','cnsm_exp2_1','cnsm_exp2_2']
-        if dataset not in datasets:
-            print('dataset must be either cnsm_ex1, exp2_2, or exp2_2')
-            import sys; sys.exit(-1)
+        for n in range(len(csv_files)):
+            csv_path=data_dir+tvt+'.'+csv_files[n]
+            csv_paths.append(csv_path)
 
-        fw_path = '/home/chl/autoregressor/data/' + dataset +'_data/gnn_data/' + \
-                tvt + '.rnn_len16.fw.csv'
-        flowmon_path = '/home/chl/autoregressor/data/' + dataset + '_data/gnn_data/' + \
-                tvt + '.rnn_len16.flowmon.csv'
-        dpi_path = '/home/chl/autoregressor/data/' + dataset + '_data/gnn_data/' + \
-                tvt + '.rnn_len16.dpi.csv'
-        ids_path = '/home/chl/autoregressor/data/' + dataset + '_data/gnn_data/' + \
-                tvt + '.rnn_len16.ids.csv'
-        label_path = '/home/chl/autoregressor/data/' + dataset + '_data/gnn_data/' + \
-                tvt + '.rnn_len16.label.csv'
-
-        from sklearn.preprocessing import StandardScaler, MinMaxScaler
+        from sklearn.preprocessing import StandardScaler
         scaler = StandardScaler()
-        mm_scaler = MinMaxScaler()
 
-        self.firewall= scaler.fit_transform(np.array(pd.read_csv(fw_path)))
-        self.flowmon= scaler.fit_transform(np.array(pd.read_csv(flowmon_path)))
-        self.dpi= scaler.fit_transform(np.array(pd.read_csv(dpi_path)))
-        self.ids= scaler.fit_transform(np.array(pd.read_csv(ids_path)))
+        # iteration for n_nodes
+        self.node_features=[]
+        for n in range(len(csv_paths)-1):
+            pp_data = scaler.fit_transform(np.array(pd.read_csv(csv_paths[n])))
+            self.node_features.append(pp_data)
+        self.label = np.array(pd.read_csv(csv_paths[-1]))
 
-        self.label = np.array(pd.read_csv(label_path))
-
-        # initialize some stuff
-        self.node_features = [self.firewall,
-                              self.flowmon,
-                              self.dpi,
-                              self.ids]
         self.idx = 0
-        self.n_samples = self.firewall.shape[0]
+        self.n_samples = self.node_features[0].shape[0]
+        self.n_node_features = self.node_features[0].shape[1]
 
         # initialize the variables
-        self.n_nodes = 4
-        self.n_node_features = self.firewall.shape[1]
-        self.n_edge_features = 1
-
+        self.n_nodes = len(self.node_features)
         self.direction = direction
         self.recur_p = recur_p
 
@@ -132,4 +114,3 @@ if __name__ == '__main__':
     for iloop, (anno, A_out, A_in, label, end_of_data) in enumerate(iter):
         print(iloop, anno.shape, A_out.shape, A_in.shape, label.shape)
         print(label)
-        import pdb; pdb.set_trace()

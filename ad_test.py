@@ -1,7 +1,9 @@
 import argparse
-import neptun
+import neptune
+import torch
 
 from ad_eval import eval_main
+from ad_model import gnn_binary_classifier
 
 '''
 eval loads model trained from different datset and measure detection performance in another dataset
@@ -15,7 +17,6 @@ if __name__ == '__main__':
     parser.add_argument('--direction', type=str)
 
     args = parser.parse_args()
-
     params = vars(args)
 
     # set neptune
@@ -28,6 +29,7 @@ if __name__ == '__main__':
     print('='*90)
 
     # load model trained from a given dataset
+    device = torch.device('cuda')
     model = torch.load(args.model_path).to(device)
 
     # load different dataset
@@ -43,6 +45,4 @@ if __name__ == '__main__':
     neptune.set_property('prec', prec)
     neptune.set_property('rec', rec)
     neptune.set_property('f1', f1)
-
-
 
