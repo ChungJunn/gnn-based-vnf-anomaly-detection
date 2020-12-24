@@ -56,9 +56,9 @@ def train_main(args, neptune):
     csv_files.append(args.csv_label) # append label 
 
     # declare dataset
-    trainiter = ad_gnn_iterator(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction)
-    valiter = ad_gnn_iterator(tvt='sup_val', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction)
-    testiter = ad_gnn_iterator(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction)
+    trainiter = ad_gnn_iterator(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction, recur_w=args.recur_w)
+    valiter = ad_gnn_iterator(tvt='sup_val', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction, recur_w=args.recur_w)
+    testiter = ad_gnn_iterator(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction, recur_w=args.recur_w)
 
     # declare optimizer
     estring = "optim." + args.optimizer
@@ -139,7 +139,6 @@ if __name__ == '__main__':
     parser.add_argument('--GRU_step', type=int)
     parser.add_argument('--optimizer', type=str)
     parser.add_argument('--lr', type=float)
-    parser.add_argument('--out_file', type=str)
     parser.add_argument('--direction', type=str)
     parser.add_argument('--reduce', type=str)
     parser.add_argument('--dataset', type=str)
@@ -151,6 +150,7 @@ if __name__ == '__main__':
     parser.add_argument('--csv5', type=str)
     parser.add_argument('--csv_label', type=str)
     parser.add_argument('--n_nodes', type=int)
+    parser.add_argument('--recur_w', type=float)
 
     args = parser.parse_args()
 

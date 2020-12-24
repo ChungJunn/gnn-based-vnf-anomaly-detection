@@ -1,16 +1,16 @@
 #!/bin/bash
-EXP_NAME='20.12.24.exp1'
+EXP_NAME='20.12.24.exp2'
 PATIENCE=5
 STATE_DIM=22
 HIDDEN_DIM=64
 GRU_STEP=5
-OPTIMIZER='SGD'
+OPTIMIZER='Adam'
 LR=0.001
-OUT_FILE='default.pth'
-DIRECTION=$2 #'bi-direction'
-RECUR_P=0.7
-REDUCE=$3 #'mean'
-DATASET=$4 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+
+DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+DIRECTION=$3 #'bi-direction'
+RECUR_W=$4
+REDUCE=$5 #'mean'
 
 # check dataset and set csv paths
 DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'
@@ -47,7 +47,6 @@ do
                         --GRU_step=$GRU_STEP \
                         --optimizer=$OPTIMIZER \
                         --lr=$LR \
-                        --out_file=$OUT_FILE \
                         --direction=$DIRECTION \
                         --reduce=$REDUCE \
                         --dataset=$DATASET \
@@ -58,5 +57,6 @@ do
                         --csv4=$CSV4 \
                         --csv5=$CSV5 \
                         --csv_label=$CSV_LABEL \
-                        --n_nodes=$N_NODES
+                        --n_nodes=$N_NODES \
+                        --recur_w=$RECUR_W
 done

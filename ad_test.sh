@@ -1,9 +1,9 @@
 #!/bin/bash
 
-EXP_NAME='20.12.22-testing'
-MODEL_PATH='./result/AN3-154.pth'
-DATASET='cnsm_exp2_2'
-DIRECTION='bi-direction'
+EXP_NAME='20.12.24-testing'
+MODEL_PATH='./result/AN3-240.pth'
+DATASET='cnsm_exp1'
+DIRECTION='forward'
 
 export CUDA_VISIBLE_DEVICES=$1
 

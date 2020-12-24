@@ -4,7 +4,7 @@ import torch
 
 # create annotation and adjacency matrices and dataloader
 class ad_gnn_iterator:
-    def __init__(self, tvt, data_dir, csv_files, direction='forward', recur_p=0.7):
+    def __init__(self, tvt, data_dir, csv_files, direction, recur_w):
         ## replace with add tvt to the dataset paths
         csv_paths=[]
 
@@ -29,7 +29,7 @@ class ad_gnn_iterator:
         # initialize the variables
         self.n_nodes = len(self.node_features)
         self.direction = direction
-        self.recur_p = recur_p
+        self.recur_w = recur_w
 
     def make_annotation_matrix(self, idx):
         # initialize the matrix
@@ -42,17 +42,17 @@ class ad_gnn_iterator:
 
         return annotation
 
-    def make_adj_matrix(self, idx, direction='forward', recur_p=0.7):
+    def make_adj_matrix(self, idx, direction='forward', recur_w=0.7):
         # initialize the matrix
         A_in = np.zeros([self.n_nodes, self.n_nodes])
         A_out = np.zeros([self.n_nodes, self.n_nodes])
 
         n_edges = 1.0 if direction=='forward' else 2.0
-        edge_weight = (1 - recur_p) / n_edges
+        edge_weight = (1 - recur_w) / n_edges
 
         import math # retrieve the related data using idx
         for from_node in range(self.n_nodes): # no edge feature for last node
-            A_in[from_node, from_node] = recur_p
+            A_in[from_node, from_node] = recur_w
 
             if from_node < (self.n_nodes - 1):
                 A_in[from_node, from_node + 1] = edge_weight
@@ -79,7 +79,7 @@ class ad_gnn_iterator:
             self.reset()
 
         annotation = self.make_annotation_matrix(self.idx)
-        A_in, A_out = self.make_adj_matrix(self.idx, direction=self.direction,recur_p=self.recur_p)
+        A_in, A_out = self.make_adj_matrix(self.idx, direction=self.direction,recur_w=self.recur_w)
 
         label = self.label[self.idx]
 
