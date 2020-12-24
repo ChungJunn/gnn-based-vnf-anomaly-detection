@@ -65,8 +65,6 @@ class ad_gnn_iterator:
         # A_in = softmax(A_in, axis=0)
         A_out += A_in
 
-        import pdb; pdb.set_trace()
-
         return A_in, A_out
 
     def reset(self):
