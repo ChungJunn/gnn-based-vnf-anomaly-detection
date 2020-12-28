@@ -9,7 +9,6 @@ class gnn_binary_classifier(nn.Module):
     def __init__(self, args):
         super(gnn_binary_classifier, self).__init__()
         self.args = args
-        self.n_nodes = 4
 
         self.GRUcell = nn.GRUCell(2 * args.state_dim, args.state_dim, bias=False)
         self.fc1 = nn.Linear(args.state_dim, args.hidden_dim)
