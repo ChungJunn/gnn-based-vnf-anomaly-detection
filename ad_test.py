@@ -13,8 +13,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str)
     parser.add_argument('--model_path', type=str)
-    parser.add_argument('--dataset', type=str)
     parser.add_argument('--direction', type=str)
+    parser.add_argument('--data_dir', type=str)
+    parser.add_argument('--n_nodes', type=int)
+    parser.add_argument('--recur_w', type=float)
+    parser.add_argument('--csv1', type=str)
+    parser.add_argument('--csv2', type=str)
+    parser.add_argument('--csv3', type=str)
+    parser.add_argument('--csv4', type=str)
+    parser.add_argument('--csv5', type=str)
+    parser.add_argument('--csv_label', type=str)
 
     args = parser.parse_args()
     params = vars(args)
@@ -33,11 +41,17 @@ if __name__ == '__main__':
     model = torch.load(args.model_path).to(device)
 
     # load different dataset
+    csv_files=[]
+    for n in range(1, args.n_nodes+1):
+        csv_file=eval('args.csv'+str(n))
+        csv_files.append(csv_file)
+    csv_files.append(args.csv_label)
+
     from ad_data import ad_gnn_iterator
-    testiter = ad_gnn_iterator(tvt='sup_test', dataset=args.dataset, direction=args.direction)
+    testiter = ad_gnn_iterator(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction, recur_w=args.recur_w)
 
     # evaluate the model and measure performance 
-    acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=none)
+    acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=None)
 
     # print results and logging
     print('acc: {:.4f} | prec: {:.4f} | rec: {:.4f} | f1: {:.4f}'.format(acc, prec, rec, f1))
