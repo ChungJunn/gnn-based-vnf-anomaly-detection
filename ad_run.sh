@@ -1,13 +1,13 @@
 #!/bin/bash
-EXP_NAME='20.12.24.exp2'
+EXP_NAME='20.12.30.exp1'
 PATIENCE=5
 STATE_DIM=22
 HIDDEN_DIM=64
-GRU_STEP=5
+GRU_STEP=$2
 OPTIMIZER='Adam'
 LR=0.001
 
-DATASET=$2 #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
+DATASET='cnsm_exp2_2' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
 DIRECTION=$3 #'bi-direction'
 RECUR_W=$4
 REDUCE=$5 #'mean'
