@@ -14,6 +14,7 @@ class gnn_binary_classifier(nn.Module):
         self.GRUcell = nn.GRUCell(2 * args.state_dim, args.state_dim, bias=False)
         self.fc1 = nn.Linear(args.state_dim, args.hidden_dim)
         self.fc2 = nn.Linear(args.hidden_dim, 2)
+        self.relu = nn.ReLU()
 
         self.enc = self.encoder
         self.reduce = args.reduce # either 'mean' or 'max'
@@ -39,6 +40,7 @@ class gnn_binary_classifier(nn.Module):
     def classifier(self, enc_out):
 
         x = self.fc1(enc_out)
+        x = self.relu(x)
         x = self.fc2(x)
 
         return F.log_softmax(x, dim=1)
