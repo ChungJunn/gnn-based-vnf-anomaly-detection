@@ -1,19 +1,20 @@
 #!/bin/bash
-EXP_NAME='20.01.04.exp1'
+EXP_NAME='20.02.01.exp1'
 PATIENCE=5
 STATE_DIM=22
 HIDDEN_DIM=64
-GRU_STEP=$2
+GRU_STEP=2
 OPTIMIZER='Adam'
 LR=0.001
+MAX_EPOCHS=1
 
 DATASET='cnsm_exp2_2' #'cnsm_exp1, cnsm_exp2_1, or cnsm_exp2_2'
-DIRECTION=$3 #'bi-direction'
-RECUR_W=$4
-REDUCE=$5 #'mean'
+DIRECTION='forward' #'bi-direction'
+RECUR_W=0.7
+REDUCE='mean' #'mean'
 
 # check dataset and set csv paths
-DATA_DIR=$HOME'/autoregressor/data/'$DATASET'_data/gnn_data/'
+DATA_DIR='./data/'$DATASET'_data/gnn_data/'
 if [ $DATASET = 'cnsm_exp1' ]
 then
     CSV1='rnn_len16.fw.csv'
@@ -58,5 +59,6 @@ do
                         --csv5=$CSV5 \
                         --csv_label=$CSV_LABEL \
                         --n_nodes=$N_NODES \
-                        --recur_w=$RECUR_W
+                        --recur_w=$RECUR_W \
+                        --max_epochs=$MAX_EPOCHS
 done
