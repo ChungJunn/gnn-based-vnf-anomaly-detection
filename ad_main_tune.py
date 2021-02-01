@@ -17,8 +17,14 @@ import time
 import argparse
 import neptune
 
+from ad_eval import eval_main
 from ad_model import gnn_binary_classifier
 from ad_data import ad_gnn_iterator
+
+from ray import tune
+from ray.tune import CLIReporter
+from ray.tune.schedulers import ASHAScheduler
+from functools import partial
 
 def validate(model, validiter, device, criterion):
     valid_loss = 0.0
@@ -41,20 +47,27 @@ def validate(model, validiter, device, criterion):
 
     return valid_loss
 
-def train_main(args, neptune):
+def train_main(args, neptune=None):
     device = torch.device('cuda:0')
     criterion = F.nll_loss
 
     # declare model
     model = gnn_binary_classifier(args).to(device)
 
+    csv_files=[]
+    for n in range(1, args.n_nodes+1):
+        csv_file = eval('args.csv' + str(n))
+        csv_files.append(csv_file)
+    csv_files.append(args.csv_label) # append label 
+
     # declare dataset
-    trainiter = ad_gnn_iterator(args, 'sup_train')
-    valiter = ad_gnn_iterator(args, 'sup_val')
-    testiter = ad_gnn_iterator(args, 'sup_test')
+    trainiter = ad_gnn_iterator(tvt='sup_train', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction, recur_w=args.recur_w)
+    valiter = ad_gnn_iterator(tvt='sup_val', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction, recur_w=args.recur_w)
+    testiter = ad_gnn_iterator(tvt='sup_test', data_dir=args.data_dir, csv_files=csv_files, direction=args.direction, recur_w=args.recur_w)
 
     # declare optimizer
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    estring = "optim." + args.optimizer
+    optimizer = eval(estring)(model.parameters(), lr=args.lr)
 
     # modify the dataset to produce labels
     # create a training loop
@@ -64,6 +77,7 @@ def train_main(args, neptune):
     bc = 0
     best_val = None
     savedir = './result/' + args.out_file
+    n_samples = trainiter.n_samples
 
     for ei in range(1000):
         for li, (anno, A_in, A_out, label, end_of_data) in enumerate(trainiter):
@@ -87,15 +101,15 @@ def train_main(args, neptune):
             if li % log_interval == (log_interval - 1):
                 train_loss = train_loss / log_interval
                 print('epoch: {:d} | li: {:d} | train_loss: {:.4f}'.format(ei+1, li+1, train_loss))
-                neptune.log_metric('train loss', li, train_loss)
+                if neptune is not None: neptune.log_metric('train loss', (ei*n_samples)+(li+1), train_loss)
                 train_loss = 0
 
             if end_of_data == 1: break
 
         # evaluation code
         valid_loss = validate(model, valiter, device, criterion)
-        print('epoch: {:d} | li: {:d} | valid_loss: {:.4f}'.format(ei+1, li+1, valid_loss))
-        neptune.log_metric('valid loss', ei, valid_loss)
+        print('epoch: {:d} | valid_loss: {:.4f}'.format(ei+1, valid_loss))
+        if neptune is not None: neptune.log_metric('valid loss', ei, valid_loss)
 
         # need to implement early-stop
         if ei == 0 or valid_loss < best_val:
@@ -111,33 +125,40 @@ def train_main(args, neptune):
             print('bad counter == %d' % (bc))
 
     model = torch.load(savedir)
-    from ad_eval import eval_main
-    eval_main(model, testiter, device, neptune=neptune)
+    acc, prec, rec, f1 = eval_main(model, testiter, device, neptune=neptune)
 
     return
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--exp_name', type=str, help='', default='exp_name')
-    parser.add_argument('--patience', type=int, help='', default=5)
-    parser.add_argument('--state_dim', type=int, help='', default=22)
-    parser.add_argument('--hidden_dim', type=int, help='', default=64)
-    parser.add_argument('--GRU_step', type=int, help='', default=5)
-    parser.add_argument('--encoder_type', type=int, help='', default=2, choices=range(1,3))
-    parser.add_argument('--lr', type=float, help='', default=0.001)
-    parser.add_argument('--tvt', type=float, help='', default=0.001)
+    parser.add_argument('--exp_name', type=str)
+    parser.add_argument('--patience', type=int)
+    parser.add_argument('--state_dim', type=int)
+    parser.add_argument('--hidden_dim', type=int)
+    parser.add_argument('--GRU_step', type=int)
+    parser.add_argument('--optimizer', type=str)
+    parser.add_argument('--lr', type=float)
+    parser.add_argument('--direction', type=str)
+    parser.add_argument('--reduce', type=str)
+    parser.add_argument('--dataset', type=str)
+    parser.add_argument('--data_dir', type=str)
+    parser.add_argument('--csv1', type=str)
+    parser.add_argument('--csv2', type=str)
+    parser.add_argument('--csv3', type=str)
+    parser.add_argument('--csv4', type=str)
+    parser.add_argument('--csv5', type=str)
+    parser.add_argument('--csv_label', type=str)
+    parser.add_argument('--n_nodes', type=int)
+    parser.add_argument('--recur_w', type=float)
+
     args = parser.parse_args()
 
     params = vars(args)
 
-    neptune.init('cjlee/AnomalyDetection-GNN')
-    experiment = neptune.create_experiment(name=args.exp_name, params=params)
-    args.out_file = experiment.id + '.pth'
-
-    print('parameters:')
-    print('='*90)
-    print(params)
-    print('='*90)
-
     train_main(args, neptune)
+
+    config = {
+        'state_dim' : tune.choice([32, 64, 128, 256]),
+        'hidden_dim' : tune.choice([64, 128, 256])
+    }
